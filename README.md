@@ -1,38 +1,36 @@
 # Durable Actors
 
-> Open source alternative to Durable Objects
+> _an open-source alternative to Cloudflare Durable Objects... without the vendor lock-in, memory limits, and terrible observability_
 
-If you've been burned by memory limits in Durable Objects, the lack of observability or want to avoid the lock in, Durable Actors is a self-hostable alternative that could work for you!
+Durable Actors helps you **build real-time applications** like chat systems (e.g. ChatGPT, Codex), collaboration tools (e.g. Notion), and agent swarms (e.g. Devin).
 
-> Use Durable Actors to build persistence and coordination for Software Factories, Multiplayer AI and agent fleets.
+It provides _stateless serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
 
-Get it working end-2-end in minutes. Define your actor class, generate your type-safe client and easily integrate into your existing tech stack.
+## How it works
 
-<img width="1599" height="676" alt="o11y-screenshot" src="https://github.com/user-attachments/assets/ac390257-8534-4911-830c-0e9155b36831" />
+1. Define an _actor_, a class with _durable state_ (i.e. data survives interruptions, errors, and restarts) and _serialized execution_ (i.e. concurrent callers can update it safely).
+2. Generate type-safe clients automatically with the Durable Actors SDK. For now, it supports Python and TypeScript (with WebSocket under the hood).
+3. Develop locally with one command and later self-host the Durable Actors runtime for production.
 
-### Start with a coding agent
+For example:
 
-Paste this prompt into your coding agent:
+- **If you were building ChatGPT...** a chat actor can store conversations that survive LLM flakiness and server crashes (durable state)
+- **If you were building Notion...**  a document actor can coordinate concurrent edits from several people and agents (serialized execution)
 
-```text
-Go to https://github.com/TerseAI/durable-actors, follow the README and build a sample project. Get the development server running and ask me where I would like to invoke my actors from.
-```
+## Quickstart: Multiplayer AI Chat
 
-Give each conversation, document, or agent a TypeScript actor: its saved state survives restarts, and its methods run one at a time by default so concurrent callers can update it safely.
+<div align="left">
+  <a href="https://github.com/TerseAI/durable-actors/blob/main/.github/assets/team-agent.gif">
+    <picture>
+      <source media="(prefers-reduced-motion: reduce)" srcset=".github/assets/team-agent.png">
+      <img alt="Teammates share one TeamAgent chat across regions; prompts queue, replies stream to everyone, and conversation state is durably persisted." src=".github/assets/team-agent.gif" width="1000">
+    </picture>
+  </a>
+</div>
 
-The SDK provides actor classes, type-safe clients, and WebSocket support. The runtime loads actors on demand and persists fields marked `@Persisted`. Develop locally with one command, then self-host the runtime for production.
-
-For example, a chat actor can keep a conversation across server restarts, or a document actor can coordinate edits from several people and agents without each caller managing database locks.
-
-## Languages
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](sdk/README.md) [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](sdk-python/README.md)
-
-## Local development
+### 1. Create your project
 
 Install Node.js 22.19+, pnpm, and Bun 1.3.9+.
-
-### Create your actor project in your directory of choice
 
 ```sh
 npx durable-actors init my-actors
@@ -43,9 +41,9 @@ npm install
 npx durable-actors dev # Run the server locally on your machine
 ```
 
-## Define an Actor
+### 2. Define an _actor_
 
-Define and export actors in your actor project’s `src/actors.ts`, the default entrypoint loaded by `durable-actors dev`. For example, a chat history actor:
+Define and export actors in your actor project’s `src/actors.ts`, the default entrypoint loaded by `durable-actors dev`. The runtime loads actors on demand and persists fields marked `@Persisted`. For example, a chat history actor:
 
 ```ts
 import { openai } from "@ai-sdk/openai"
@@ -82,7 +80,7 @@ export class ChatHistory extends Actor<Member, string, Chat> {
 ```
 
 
-## Connect your Backend
+### 3. Connect your backend
 
 We make it super easy to integrate the actors into your existing tech stack. Just generate the client and you get a fully type safe contract to interact with.
 
@@ -108,7 +106,7 @@ app.post("/api/chat/:room/socket", async (req, res) => {
 })
 ```
 
-## Connect the frontend (React)
+### 4. Connect the frontend
 
 ```tsx
 import { useEffect, useRef, useState } from "react"
@@ -169,18 +167,17 @@ function Chat() {
 createRoot(document.getElementById("root")!).render(<Chat />)
 ```
 
-For complete sample applications, see [AI Chat](examples/ai-chat), [Collaborative documents](examples/documents), and [Chatroom](examples/chat).
+### 5. Monitor and debug
 
-Here's what it looks like in action:
+Durable Agents provides built-in observability features:
 
-<div align="left">
-  <a href="https://github.com/TerseAI/durable-actors/blob/main/.github/assets/team-agent.gif">
-    <picture>
-      <source media="(prefers-reduced-motion: reduce)" srcset=".github/assets/team-agent.png">
-      <img alt="Teammates share one TeamAgent chat across regions; prompts queue, replies stream to everyone, and conversation state is durably persisted." src=".github/assets/team-agent.gif" width="1000">
-    </picture>
-  </a>
-</div>
+<img width="1599" height="676" alt="o11y-screenshot" src="https://github.com/user-attachments/assets/ac390257-8534-4911-830c-0e9155b36831" />
+
+## Examples
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](sdk/README.md) [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](sdk-python/README.md)
+
+For complete sample applications, see [AI Chat](examples/ai-chat), [Collaborative Documents](examples/documents), and [Chatroom](examples/chat).
 
 ## Community
 

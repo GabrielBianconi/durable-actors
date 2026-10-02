@@ -2,9 +2,9 @@
 
 > _an open-source alternative to Cloudflare Durable Objects... without the vendor lock-in, memory limits, and terrible observability_
 
-Durable Actors helps you **build real-time applications** like chat systems (e.g. ChatGPT, Codex), collaboration tools (e.g. Notion), and agent swarms (e.g. Devin).
+Durable Actors help you **build real-time applications** like chat systems (e.g. ChatGPT, Codex), collaboration tools (e.g. Notion), and agent swarms (e.g. Devin).
 
-It provides _stateless serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
+They provide _stateless serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
 
 ## How it works
 

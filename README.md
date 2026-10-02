@@ -1,33 +1,25 @@
 # Durable Actors
 
-> _an open-source alternative to Cloudflare Durable Objects... without the vendor lock-in, memory limits, and terrible observability_
+> _an open-source alternative to Cloudflare Durable Objects... with no vendor lock-in, memory limits, and observability built in._
 
 Durable Actors help you **build real-time applications** like chat systems (e.g. ChatGPT, Codex), collaboration tools (e.g. Notion), and agent swarms (e.g. Devin).
 
-They provide _stateless serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
+They provide _stateful serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
 
 ## How it works
 
 1. Define an _actor_, a class with _durable state_ (i.e. data survives interruptions, errors, and restarts) and _serialized execution_ (i.e. concurrent callers can update it safely).
+   For example:
 
-    For example:
-
-    - **If you were building ChatGPT...** a chat actor can store conversations that survive LLM flakiness and server crashes (durable state)
-    - **If you were building Notion...**  a document actor can coordinate concurrent edits from several people and agents (serialized execution)
+- **If you were building ChatGPT...** a chat actor can store conversations that survive LLM flakiness and server crashes (durable state)
+- **If you were building Notion...** a document actor can coordinate concurrent edits from several people and agents (serialized execution)
 
 2. Generate type-safe clients automatically with the Durable Actors SDK. For now, it supports Python and TypeScript.
 3. Develop locally with one command and later self-host the Durable Actors runtime for production.
 
 ## Quickstart: Multiplayer AI Chat
 
-<div align="left">
-  <a href="https://github.com/TerseAI/durable-actors/blob/main/.github/assets/team-agent.gif">
-    <picture>
-      <source media="(prefers-reduced-motion: reduce)" srcset=".github/assets/team-agent.png">
-      <img alt="Teammates share one TeamAgent chat across regions; prompts queue, replies stream to everyone, and conversation state is durably persisted." src=".github/assets/team-agent.gif" width="1000">
-    </picture>
-  </a>
-</div>
+![Teammates share one TeamAgent chat across regions; prompts queue, replies stream to everyone, and conversation state is durably persisted.](.github/assets/team-agent.gif)
 
 ### 1. Create your project
 
@@ -36,8 +28,6 @@ Install Node.js 22.19+, pnpm, and Bun 1.3.9+.
 ```sh
 npx durable-actors init my-actors
 cd my-actors
-pnpm install
-# Or with npm:
 npm install
 npx durable-actors dev # Run the server locally on your machine
 ```
@@ -49,7 +39,7 @@ Define and export actors in your actor project’s `src/actors.ts`, the default 
 ```ts
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
-import { Actor, Persisted, Reentrant, type ActorSocket } from "durable-actors"
+import { Actor, type ActorSocket, Persisted, Reentrant } from "durable-actors"
 
 type Member = { name: string }
 type Message = { role: "user" | "assistant"; content: string }
@@ -79,7 +69,6 @@ export class ChatHistory extends Actor<Member, string, Chat> {
     }
 }
 ```
-
 
 ### 3. Connect your backend
 
@@ -172,11 +161,11 @@ createRoot(document.getElementById("root")!).render(<Chat />)
 
 Durable Agents provides built-in observability features:
 
-<img width="1599" height="676" alt="o11y-screenshot" src="https://github.com/user-attachments/assets/ac390257-8534-4911-830c-0e9155b36831" />
+![o11y-screenshot](https://github.com/user-attachments/assets/ac390257-8534-4911-830c-0e9155b36831)
 
 ## Examples
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](sdk/README.md) [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](sdk-python/README.md)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 
 For complete sample applications, see [AI Chat](examples/ai-chat), [Collaborative Documents](examples/documents), and [Chatroom](examples/chat).
 

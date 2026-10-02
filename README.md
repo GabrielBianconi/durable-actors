@@ -9,13 +9,16 @@ It provides _stateless serverless functions_, a foundational building block that
 ## How it works
 
 1. Define an _actor_, a class with _durable state_ (i.e. data survives interruptions, errors, and restarts) and _serialized execution_ (i.e. concurrent callers can update it safely).
-2. Generate type-safe clients automatically with the Durable Actors SDK. For now, it supports Python and TypeScript (with WebSocket under the hood).
+
+> [!TIP]
+>
+> For example:
+>
+> - **If you were building ChatGPT...** a chat actor can store conversations that survive LLM flakiness and server crashes (durable state)
+> - **If you were building Notion...**  a document actor can coordinate concurrent edits from several people and agents (serialized execution)
+
+2. Generate type-safe clients automatically with the Durable Actors SDK. For now, it supports Python and TypeScript.
 3. Develop locally with one command and later self-host the Durable Actors runtime for production.
-
-For example:
-
-- **If you were building ChatGPT...** a chat actor can store conversations that survive LLM flakiness and server crashes (durable state)
-- **If you were building Notion...**  a document actor can coordinate concurrent edits from several people and agents (serialized execution)
 
 ## Quickstart: Multiplayer AI Chat
 

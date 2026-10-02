@@ -6,6 +6,8 @@ Durable Actors help you **build real-time applications** like chat systems (e.g.
 
 They provide _stateful serverless functions_, a foundational building block that abstracts away persistence, coordination, and infrastructure challenges in distributed systems.
 
+[Live demo](https://demo.useterse.ai) · [Documentation](docs)
+
 ## How it works
 
 1. Define an _actor_, a class with _durable state_ (i.e. data survives interruptions, errors, and restarts) and _serialized execution_ (i.e. concurrent callers can update it safely).
@@ -23,7 +25,7 @@ They provide _stateful serverless functions_, a foundational building block that
 
 ### 1. Create your project
 
-Install Node.js 22.19+, pnpm, and Bun 1.3.9+.
+Install Node.js 22.19+ and Bun 1.3.9+.
 
 ```sh
 npx durable-actors init my-actors
@@ -34,38 +36,35 @@ npx durable-actors dev # Run the server locally on your machine
 
 ### 2. Define an _actor_
 
-Define and export actors in your actor project’s `src/actors.ts`, the default entrypoint loaded by `durable-actors dev`. The runtime loads actors on demand and persists fields marked `@Persisted`. For example, a chat history actor:
+Define and export actors in your actor project’s `src/actors.ts`, the default entrypoint loaded by `durable-actors dev`. The runtime loads actors on demand and persists fields marked `@Persisted`.
+
+For example, a chat history actor:
 
 ```ts
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
 import { Actor, type ActorSocket, Persisted, Reentrant } from "durable-actors"
 
-type Member = { name: string }
 type Message = { role: "user" | "assistant"; content: string }
-type Chat = { messages: Message[]; busy: boolean }
 
-export class ChatHistory extends Actor<Member, string, Chat> {
+export class ChatHistory extends Actor<null, string, Message[]> {
     @Persisted messages: Message[] = []
 
-    async onConnect(socket: ActorSocket<Member, Chat>) {
-        socket.send({ messages: this.messages, busy: false })
+    async onConnect(socket: ActorSocket<null, Message[]>) {
+        socket.send(this.messages)
     }
 
-    @Reentrant
-    async onMessage(socket: ActorSocket<Member, Chat>, text: string) {
-        const messages: Message[] = [...this.messages, { role: "user", content: `${socket.metadata.name}: ${text}` }]
-        this.broadcast({ messages, busy: true })
-
+    @Reentrant // Let other calls run during await, e.g. new connections while a reply streams.
+    async onMessage(_socket: ActorSocket<null, Message[]>, text: string) {
+        this.messages.push({ role: "user", content: text })
+        const result = streamText({ model: openai("gpt-5-mini"), messages: [...this.messages] })
         const reply: Message = { role: "assistant", content: "" }
-        const result = streamText({ model: openai("gpt-5-mini"), messages })
+        this.messages.push(reply)
+        this.broadcast(this.messages)
         for await (const chunk of result.textStream) {
             reply.content += chunk
-            this.broadcast({ messages: [...messages, reply], busy: true })
+            this.broadcast(this.messages)
         }
-
-        this.messages = [...messages, reply]
-        this.broadcast({ messages: this.messages, busy: false })
     }
 }
 ```
@@ -78,7 +77,7 @@ We make it super easy to integrate the actors into your existing tech stack. Jus
 npx durable-actors generate
 ```
 
-Now you may call your actor and access the state.
+Create a WebSocket connection to one shared chat:
 
 ```ts
 import express from "express"
@@ -87,10 +86,10 @@ import { actors } from "../generated/index.js"
 
 export const app = express()
 
-app.post("/api/chat/:room/socket", async (req, res) => {
+app.post("/api/chat/socket", async (_req, res) => {
     const grant = await actors.ChatHistory.prepareWebsocket({
-        actorId: req.params.room,
-        metadata: { name: String(req.query.name ?? "Guest") }
+        actorId: "lobby",
+        metadata: null
     })
     res.set("Cache-Control", "no-store").json(grant)
 })
@@ -104,22 +103,18 @@ import { createRoot } from "react-dom/client"
 
 import type { actors } from "../generated/index.js"
 
-const params = new URLSearchParams(location.search)
-const room = params.get("chat") ?? "lobby"
-const name = params.get("name") ?? "Guest"
-
 function Chat() {
     const socket = useRef<WebSocket>(null)
-    const [chat, setChat] = useState<actors.ChatHistory.Outgoing>({ messages: [], busy: true })
+    const [messages, setMessages] = useState<actors.ChatHistory.Outgoing>([])
 
     useEffect(() => {
         let active = true
         async function connect() {
-            const response = await fetch(`/api/chat/${encodeURIComponent(room)}/socket?name=${encodeURIComponent(name)}`, { method: "POST" })
+            const response = await fetch("/api/chat/socket", { method: "POST" })
             const { websocketUrl } = await response.json()
             if (!active) return
             socket.current = new WebSocket(websocketUrl)
-            socket.current.onmessage = event => setChat(JSON.parse(event.data))
+            socket.current.onmessage = event => setMessages(JSON.parse(event.data))
         }
         void connect()
         return () => {
@@ -132,23 +127,18 @@ function Chat() {
         const text = String(form.get("message")).trim()
         if (!text || socket.current?.readyState !== WebSocket.OPEN) return
         socket.current.send(JSON.stringify(text))
-        setChat(chat => ({ ...chat, busy: true }))
     }
 
     return (
         <main>
-            <h1>AI chat · {room}</h1>
             <div role="log" aria-label="Messages">
-                {chat.messages.map((message, index) => (
-                    <article key={index}>
-                        <strong>{message.role}</strong>
-                        <p>{message.content}</p>
-                    </article>
+                {messages.map((message, index) => (
+                    <p key={index}><strong>{message.role}:</strong> {message.content}</p>
                 ))}
             </div>
             <form action={send}>
-                <input name="message" aria-label="Message" required disabled={chat.busy} />
-                <button disabled={chat.busy}>Send</button>
+                <input name="message" aria-label="Message" required />
+                <button>Send</button>
             </form>
         </main>
     )
@@ -156,6 +146,8 @@ function Chat() {
 
 createRoot(document.getElementById("root")!).render(<Chat />)
 ```
+
+For a complete app with error handling and retries, see the [AI Chat example](examples/ai-chat).
 
 ### 5. Monitor and debug
 
